@@ -8,8 +8,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
-    res.send("Server up and running...")
+app.get("/api/stalls", async (req, res) => {
+    try {
+
+        const result = await pool.query("SELECT * FROM stalls");
+
+        res.json(result.rows);
+
+    } catch (error) {
+
+        console.error(error);
+        res.status(500).json({ error: "Server error" });
+
+    }
 });
 
 const PORT = process.env.PORT || 3000;
