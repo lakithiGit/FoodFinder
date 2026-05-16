@@ -26,9 +26,30 @@ function getDistance(lat1, lon1, lat2, lon2) {
 app.get("/api/stalls", async (req, res) => {
     try {
 
+        const userLat = parseFloat(req.query.lat);
+        const userLng = parseFloat(req.query.lng);
+
         const result = await pool.query("SELECT * FROM stalls");
 
-        res.json(result.rows);
+        const nearbyStalls = result.rows
+            .map(stall => {
+
+                const distance = getDistance(
+                    userLat,
+                    userLng,
+                    stall.latitude,
+                    stall.longitude
+                );
+
+                return {
+                    ...stall,
+                    distance: distance.toFixed(1)
+                };
+
+            })
+            .filter(stall => stall.distance <= 5);
+
+        res.json(nearbyStalls);
 
     } catch (error) {
 
