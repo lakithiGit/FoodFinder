@@ -9,9 +9,7 @@ const stallId = params.get("id");
 
 async function loadStall() {
 
-    const menuResponse = await fetch(
-    `/api/stalls/${stallId}/menu`
-);
+    const menuResponse = await fetch(`/api/stalls/${stallId}/menu`);
 
     const menuItems = await menuResponse.json();
 
