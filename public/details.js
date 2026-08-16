@@ -10,7 +10,7 @@ const stallId = params.get("id");
 async function loadStall() {
 
     const menuResponse = await fetch(
-    `http://localhost:3000/api/stalls/${stallId}/menu`
+    `/api/stalls/${stallId}/menu`
 );
 
     const menuItems = await menuResponse.json();
@@ -24,7 +24,7 @@ async function loadStall() {
             <p>R${item.price}</p>
         </div>`).join("");
 
-    const response = await fetch(`http://localhost:3000/api/stalls/${stallId}`);
+    const response = await fetch(`/api/stalls/${stallId}`);
     // need api on server.js that returns the stall details matching the stall id
 
     const stall = await response.json();

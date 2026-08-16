@@ -8,7 +8,7 @@ searchStalls.addEventListener("click", () => {
         
         const lng = position.coords.longitude;
 
-        const response = await fetch(`http://localhost:3000/api/stalls?lat=${lat}&lng=${lng}`);
+        const response = await fetch(`/api/stalls?lat=${lat}&lng=${lng}`);
 
     const stalls = await response.json();
 
@@ -24,7 +24,7 @@ searchStalls.addEventListener("click", () => {
         stallDiv.classList.add("stall-card");
 
         stallDiv.innerHTML = `
-        <img src="http://localhost:3000${stall.image_url}"
+        <img src="${stall.image_url}"
             alt="${stall.name}"
             class="stall-image">
 
