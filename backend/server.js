@@ -2,6 +2,9 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const {Pool} = require("pg");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const authenticateToken = require("./authMiddleware");
 
 const app = express();
 
@@ -100,6 +103,171 @@ app.get("/api/stalls/:id/menu", async (req, res) => {
     );
 
     res.json(result.rows);
+});
+
+app.post("/api/auth/register", async (req, res) => {
+    try {
+
+        const { username, email, password } = req.body;
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const result = await pool.query(
+            `INSERT INTO users (username, email, password_hash)
+             VALUES ($1, $2, $3)
+             RETURNING id, username, email`,
+            [username, email, hashedPassword]
+        );
+
+        res.status(201).json({
+            message: "User registered successfully",
+            user: result.rows[0]
+        });
+    }   catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: "Something went wrong"
+        });
+
+    }
+})
+
+app.post("/api/auth/login", async (req, res) => {
+
+    try {
+
+        const { email, password } = req.body;
+
+        const result = await pool.query(
+            "SELECT * FROM users WHERE email = $1",
+            [email]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(401).json({
+                message: "Invalid email or password"
+            });
+        }
+
+        const user = result.rows[0];
+
+        const validPassword = await bcrypt.compare(
+            password,
+            user.password_hash
+        );
+
+        if (!validPassword) {
+            return res.status(401).json({
+                message: "Invalid email or password"
+            });
+        }
+
+        const token = jwt.sign(
+            {
+                userId: user.id
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: "1h"
+            }
+        );
+
+        res.json({
+            message: "Login successful",
+            token: token
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: "Something went wrong"
+        });
+
+    }
+
+});
+
+app.get("/api/protected", authenticateToken, (req, res) => {
+
+    res.json({
+        message: "You are authenticated!",
+        user: req.user
+    });
+
+});
+
+app.post("/api/reviews", authenticateToken, async (req, res) => {
+
+    try {
+
+        const { stall_id, rating, review_text } = req.body;
+
+        const user_id = req.user.userId;
+
+        const result = await pool.query(
+            `INSERT INTO reviews
+                (user_id, stall_id, rating, review_text)
+             VALUES
+                ($1, $2, $3, $4)
+             RETURNING *`,
+            [user_id, stall_id, rating, review_text]
+        );
+
+        res.status(201).json({
+            message: "Review created successfully",
+            review: result.rows[0]
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: "Something went wrong"
+        });
+
+    }
+
+});
+
+app.get("/api/stalls/:id/reviews", async (req, res) => {
+
+    try {
+
+        const { id } = req.params;
+
+        const result = await pool.query(
+            `SELECT
+                reviews.id,
+                reviews.rating,
+                reviews.review_text,
+                reviews.created_at,
+                users.id AS user_id,
+                users.username
+             FROM reviews
+             JOIN users
+                ON reviews.user_id = users.id
+             WHERE reviews.stall_id = $1
+             ORDER BY reviews.created_at DESC`,
+            [id]
+        );
+
+        res.json(result.rows);
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: "Something went wrong"
+        });
+
+    }
+
 });
 
 const PORT = process.env.PORT || 3000;
