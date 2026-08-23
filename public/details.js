@@ -73,6 +73,35 @@ document.querySelectorAll(".directions-button").forEach(button => {
 
 }
     
+async function loadReviews(stallId) {
+
+    const response = await fetch(
+        `/api/stalls/${stallId}/reviews`
+    );
+
+    const reviews = await response.json();
+
+    const reviewsContainer =
+        document.getElementById("reviews-container");
+
+    reviewsContainer.innerHTML = "";
+
+    reviews.forEach(review => {
+
+        const reviewElement = document.createElement("div");
+
+        reviewElement.innerHTML = `
+            <h3>${review.username}</h3>
+            <p>⭐ ${review.rating}/5</p>
+            <p>${review.review_text}</p>
+        `;
+
+        reviewsContainer.appendChild(reviewElement);
+
+    });
+}
+
+loadReviews(stallId);
 
 loadStall();
 
